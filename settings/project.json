@@ -1,0 +1,38 @@
+{
+  "group-list": [
+    "default"
+  ],
+  "collision-matrix": [
+    [
+      true
+    ]
+  ],
+  "excluded-modules": [
+    "3D Physics/Builtin"
+  ],
+  "preview-port": 7456,
+  "design-resolution-width": 1200,
+  "design-resolution-height": 2400,
+  "fit-width": false,
+  "fit-height": true,
+  "use-project-simulator-setting": true,
+  "simulator-orientation": false,
+  "use-customize-simulator": false,
+  "simulator-resolution": {
+    "height": 2436,
+    "width": 1125
+  },
+  "clear-simulator-cache": true,
+  "facebook": {
+    "appID": "",
+    "audience": {
+      "enable": false
+    },
+    "enable": false,
+    "live": {
+      "enable": false
+    }
+  },
+  "start-scene": "cc0edb41-fd2b-421e-81c8-c8ef32f68da2",
+  "last-module-event-record-time": 1616483628364
+}
