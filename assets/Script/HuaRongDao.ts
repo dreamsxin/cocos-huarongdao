@@ -51,7 +51,7 @@ export default class HuaRongDao extends cc.Component {
         cc.find("helpModal/closeBtn", this.node).on('click', () => this.controlModal(this.helpModal, false));
 
 
-        // this.startNewGame();
+        this.startNewGame();
     }
 
     render = () => {
@@ -107,7 +107,7 @@ export default class HuaRongDao extends cc.Component {
     renderNewGameState = (gameState: GameState) => {
         for (const nodeName in this.chessNodesUesd) {
             this.chessNodesUesd[nodeName] = -1;
-            cc.find(nodeName, this.board).setPosition(cc.v3(2000, 0, 0))
+            cc.find(nodeName, this.board).setPosition(cc.v3(0, 2400, 0))
         }
         this.gameState = gameState;
         this.renderGameState();
