@@ -30,3 +30,8 @@ export const ALL_DIRS: Direction[] = [
 
 export type Grids = (null | number)[][];
 
+export enum Difficulty {
+  easy,
+  simple,
+  hard,
+}

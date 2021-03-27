@@ -1,15 +1,25 @@
 import { Chess, Direction, Grids, Step, ALL_DIRS } from "./types";
-import gameData from "./gameData";
 
 
 export class GameState {
+    public levelName: string;
     public chesses: Chess[];
     public steps: Step[];
     public isWin: boolean = false;
+    public lookSolve: boolean = false;
 
-    constructor(chesses: Chess[], steps: Step[]) {
+    constructor(
+        chesses: Chess[],
+        steps: Step[],
+        levelName: string = "",
+        lookSolve: boolean = false,
+        isWin: boolean = false,
+    ) {
         this.chesses = chesses;
         this.steps = steps;
+        this.levelName = levelName;
+        this.lookSolve = lookSolve;
+        this.isWin = isWin;
     }
     /**
      * 转换局面到网格
@@ -50,11 +60,14 @@ export class GameState {
      */
     public backStep(stepsLength) {
         const sl = Math.min(this.steps.length, stepsLength)
+        this.isWin = false;
+        if(stepsLength === this.steps.length) {
+            this.lookSolve = false;
+        }
         for (let i = 0; i < sl; i++) {
             const { ci, dx, dy } = this.steps.pop();
             this.chesses[ci].x -= dx;
             this.chesses[ci].y -= dy;
-            this.logGrides()
         }
     }
 
@@ -112,7 +125,6 @@ export class GameState {
                 if (grids[gridY][gridX] !== null && grids[gridY][gridX] !== chessIndex) {
                     return false;
                 }
-
             }
         }
         return true
@@ -205,64 +217,6 @@ export class GameState {
         return new GameState(chesses, []);
     }
 
-     /**
-     * 根据难度随机一个有解游戏，使用 https://gitee.com/thethinking/klotski 的局面列表作为数据包，减少卡顿现象。
-     * @returns 
-     */
-    public static randomGame(isHard = false) {
-        const hubKey = isHard ? 'hard' : 'simple';
-        const index = Math.floor(Math.random() * gameData[hubKey].length)
-        const gameKey = gameData[hubKey][index].k;
-        return GameState.fromSimilarKey(gameKey);
-    }
-
-    /**
-     * 根据难度随机一个有解游戏。
-     * 如果有随机到其他难度，先存起来几个，切换难度的时候直接难出来用。
-     * @returns 
-     */
-    // public static randomGame(isHard = false, preload = false) {
-
-    //     const minHardGameStepsLength = 90; // 对于困难游戏的定义，90表示90步及以上为困难
-    //     let gamesHub: { simple: string[], hard: string[] } = null;
-    //     try {
-    //         gamesHub = JSON.parse(cc.sys.localStorage.getItem("gamesHub"))
-    //     } catch (e) {
-
-    //     }
-
-    //     if (!gamesHub) {
-    //         gamesHub = { simple: [], hard: [] }
-    //     }
-    //     const hubKey = isHard ? 'hard' : 'simple';
-
-    //     if (preload && gamesHub[hubKey].length > 1) {
-    //         return;
-    //     }
-    //     if (!preload && gamesHub[hubKey].length > 0) {
-    //         const gameKey = gamesHub[hubKey].pop();
-    //         cc.sys.localStorage.setItem("gamesHub", JSON.stringify(gamesHub));
-    //         return GameState.fromSimilarKey(gameKey);
-    //     }
-    //     let gotIt = false;
-    //     while (!gotIt) {
-    //         const game = GameState._randomGame();
-    //         const steps = game.solve()
-    //         if (!steps) {
-    //             continue
-    //         }
-
-    //         if ((isHard && steps.length >= minHardGameStepsLength) ||
-    //             (!isHard && steps.length < minHardGameStepsLength)) {
-    //             return game
-    //         } else if (gamesHub.hard.length < 5) {
-    //             // 随机到其他难度，存起来
-    //             const otherHubKey = !isHard ? 'hard' : 'simple';
-    //             gamesHub[otherHubKey].push(game.toSimilarKey());
-    //             cc.sys.localStorage.setItem("gamesHub", JSON.stringify(gamesHub));
-    //         }
-    //     }
-    // }
 
     /**
      * 克隆
@@ -273,7 +227,7 @@ export class GameState {
         for (let i = 0; i < this.chesses.length; i++) {
             chesses.push(Object.assign({}, this.chesses[i]));
         }
-        return new GameState(chesses, [...this.steps]);
+        return new GameState(chesses, [...this.steps], this.levelName, this.lookSolve, this.isWin);
     }
 
     /**

@@ -8,4 +8,5 @@
 [https://oss.humwo.com/hua-rong-dao/index.html](https://oss.humwo.com/hua-rong-dao/index.html)
 
 ## 感谢
-使用了[https://gitee.com/thethinking/klotski](https://gitee.com/thethinking/klotski)的局面列表作为数据包，减少随机生成关卡的卡顿现象。
+关卡使用了[https://gitee.com/thethinking/klotski](https://gitee.com/thethinking/klotski)的局面列表作为数据包，减少随机生成关卡的卡顿现象。
+logo使用免费字体《王汉宗波卡体—空阴》。

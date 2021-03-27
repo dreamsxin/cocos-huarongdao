@@ -1,8 +1,9 @@
 import CustomGame from "./CustomGame";
 import { GameState } from "./game";
+import Levels from "./Levels";
 import Loading from "./Loading";
 import Options from "./Options";
-import { Direction, Step } from "./types";
+import { Difficulty, Direction, Step } from "./types";
 
 const { ccclass, property } = cc._decorator;
 
@@ -11,7 +12,9 @@ export default class HuaRongDao extends cc.Component {
 
     private menus: cc.Node; // 游戏菜单
     private newGameModal: cc.Node; // 新游戏弹窗
-    private customGameModal: cc.Node; // 新游戏弹窗
+    private levelsModal: cc.Node; // 关卡弹窗
+    private levelsComponent: Levels; // 关卡自定义组件
+    private customGameModal: cc.Node; // 自定义游戏弹窗
     private solveModal: cc.Node; // 解答界面
     private gameState: GameState; // 游戏局面
     private solvedGameState: GameState; // 暂存被解答的游戏局面
@@ -30,12 +33,13 @@ export default class HuaRongDao extends cc.Component {
 
     start() {
         this.render();
-        cc.find("menus/startBtn", this.node).on("click", () => this.controlModal(this.newGameModal, true));
-        cc.find("newGameModal/closeBtn", this.node).on('click', this.hideNewGameModal);
-        cc.find("newGameModal/simpleBtn", this.node).on('click', () => this.startNewGame(false));
-        cc.find("newGameModal/hardBtn", this.node).on('click', () => this.startNewGame(true));
-        cc.find("newGameModal/customBtn", this.node).on('click', this.showCustomGameModal);
-        cc.find("customGameModal/cancelBtn", this.node).on('click', this.hideCustomGameModal);
+        cc.find("menus/startBtn", this.node).on("click", this.showNewGameModal);
+        cc.find("newGameModal/backGameBtn", this.node).on('click', () => this.controlModal(this.newGameModal, false));
+        cc.find("newGameModal/easyBtn", this.node).on('click', () => this.showLevelsModal(Difficulty.easy));
+        cc.find("newGameModal/simpleBtn", this.node).on('click', () => this.showLevelsModal(Difficulty.simple));
+        cc.find("newGameModal/hardBtn", this.node).on('click', () => this.showLevelsModal(Difficulty.hard));
+        cc.find("newGameModal/customBtn", this.node).on('click', () => this.controlModal(this.customGameModal, true));
+        cc.find("customGameModal/cancelBtn", this.node).on('click', () => this.controlModal(this.customGameModal, false));
         cc.find("customGameModal/submitBtn", this.node).on('click', this.newCustomGame);
 
         cc.find("menus/backBtn", this.node).on('click', () => this.backStep(1));
@@ -50,13 +54,15 @@ export default class HuaRongDao extends cc.Component {
         cc.find("menus/helpBtn", this.node).on('click', () => this.controlModal(this.helpModal, true));
         cc.find("helpModal/closeBtn", this.node).on('click', () => this.controlModal(this.helpModal, false));
 
-
-        this.startNewGame();
+        cc.find("levelsModal/closeBtn", this.node).on('click', () => this.controlModal(this.levelsModal, false));
     }
 
     render = () => {
         this.menus = cc.find("menus", this.node);
         this.newGameModal = cc.find("newGameModal", this.node);
+        this.levelsModal = cc.find("levelsModal", this.node);
+        this.levelsComponent = this.levelsModal.getComponent("Levels");
+    
         this.customGameModal = cc.find("customGameModal", this.node);
         this.solveModal = cc.find("solveModal", this.node);
         this.optionsModal = cc.find("optionsModal", this.node);
@@ -69,10 +75,21 @@ export default class HuaRongDao extends cc.Component {
         })
         // 更新位置，防止节点因为Widget位置取不对
         this.board.getComponent(cc.Widget).updateAlignment();
-        this.newGameModal.scale = 0;
+        // 隐藏其他modal
+        cc.find("newGameModal/backGameBtn", this.node).scale = 0
         this.solveModal.scale = 0;
         this.customGameModal.scale = 0;
         this.optionsModal.scale = 0;
+    }
+
+    /**
+     * 显示新游戏选择弹窗
+     */
+    showNewGameModal = () => {
+        // 如果是游戏中，显示返回游戏按钮
+        cc.log(this.gameState && !this.gameState.isWin)
+        cc.find("newGameModal/backGameBtn", this.node).scale = this.gameState && !this.gameState.isWin ? 1 : 0;
+        this.controlModal(this.newGameModal, true)
     }
 
     /**
@@ -88,15 +105,12 @@ export default class HuaRongDao extends cc.Component {
     }
 
     /**
-     * 随机开始一局游戏并渲染
+     * 弹出关卡选择
      */
-    startNewGame = (isHard: boolean = false) => {
-        this.loading.show("生成中…")
-        setTimeout(() => {
-            this.renderNewGameState(GameState.randomGame(isHard));
-            this.hideNewGameModal();
-        }, 100)
-
+    showLevelsModal = (difficulty: Difficulty) => {
+        this.levelsComponent.difficulty = difficulty;
+        this.levelsComponent.showPage(0);
+        this.controlModal(this.levelsModal, true);
     }
 
 
@@ -184,7 +198,11 @@ export default class HuaRongDao extends cc.Component {
 
         }
         if (this.gameState.isWin) {
-            this.alert("恭喜成功!");
+            // cc.log(this.gameState.lookSolve)
+            this.alert(this.gameState.lookSolve ? "成功！试试不看答案重来一次！" : "恭喜成功!");
+            if(!this.gameState.lookSolve) {
+                this.levelsComponent.addWinLevel(this.gameState.levelName)
+            }
         }
     }
 
@@ -203,10 +221,11 @@ export default class HuaRongDao extends cc.Component {
             this.alert("已经成功!");
             return;
         }
-        this.loading.show("计算答案…")
+        this.gameState.lookSolve = true; // 标记看过答案
+        this.loading.show("计算答案…");
         setTimeout(() => {
-            const steps = this.gameState.solve()
-            this.loading.hide()
+            const steps = this.gameState.solve();
+            this.loading.hide();
             if (!steps) {
                 this.alert("无解!");
                 return;
@@ -220,9 +239,8 @@ export default class HuaRongDao extends cc.Component {
             this.solvedStepIndex = -2;
             this.menus.scale = 0;
             this.solveModal.scale = 1;
-            this.renderSolveStep()
-        }, 100)
-
+            this.renderSolveStep();
+        }, 100);
     }
 
     /**
@@ -284,20 +302,6 @@ export default class HuaRongDao extends cc.Component {
         this.solveModal.scale = 0;
     }
 
-    showCustomGameModal = () => {
-        this.newGameModal.scale = 0;
-        cc.tween(this.customGameModal).to(0.2, {
-            scale: 1
-        }).start()
-    }
-
-    hideCustomGameModal = () => {
-        cc.tween(this.customGameModal).to(0.2, {
-            scale: 0
-        }).start()
-        this.customGameModal.getComponent("CustomGame").clear()
-    }
-
     /**
      * 
      * @returns 完成新建
@@ -314,13 +318,18 @@ export default class HuaRongDao extends cc.Component {
                 return
             }
             this.renderNewGameState(gameState);
-            cc.tween(this.customGameModal).to(0.2, {
-                scale: 0
-            }).start()
+            this.newGameModal.scale = 0;
+            cc.find("menus/levelName", this.node).getComponent(cc.Label).string = "自定义关卡"
+            this.controlModal(this.customGameModal, false)
             customGame.clear()
         }, 100)
     }
 
+    /**
+     * 设置各个modal的显示隐藏
+     * @param modal 
+     * @param isShow 
+     */
     controlModal = (modal: cc.Node, isShow: boolean) => {
         if (modal) {
             cc.tween(modal).to(0.2, {
