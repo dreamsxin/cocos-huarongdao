@@ -8,5 +8,5 @@
 [https://oss.humwo.com/hua-rong-dao/index.html](https://oss.humwo.com/hua-rong-dao/index.html)
 
 ## 感谢
-关卡使用了[https://gitee.com/thethinking/klotski](https://gitee.com/thethinking/klotski)的局面列表作为数据包，减少随机生成关卡的卡顿现象。
+感谢[https://www.klotski.app](https://www.klotski.app)提供的局面数据包。我从中按完成步数均匀随机出来999个局面作为关卡。  
 logo使用免费字体《王汉宗波卡体—空阴》。
