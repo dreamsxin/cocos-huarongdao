@@ -127,7 +127,6 @@ export default class Levels extends cc.Component {
         const gameCtrl: HuaRongDao = cc.find("/Canvas").getComponent("HuaRongDao")
         gameCtrl.renderNewGameState(gameState)
         cc.find("/Canvas/newGameModal").scale = 0;
-        cc.find("/Canvas/menus/levelName").getComponent(cc.Label).string = `第 ${levelName} 关`
         gameCtrl.controlModal(this.node, false);
     }
 

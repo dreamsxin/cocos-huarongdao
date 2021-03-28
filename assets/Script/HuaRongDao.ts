@@ -4,6 +4,7 @@ import Levels from "./Levels";
 import Loading from "./Loading";
 import Options from "./Options";
 import { Difficulty, Direction, Step } from "./types";
+import gameData from './gameData';
 
 const { ccclass, property } = cc._decorator;
 
@@ -27,6 +28,8 @@ export default class HuaRongDao extends cc.Component {
     private optionsModal: cc.Node;
     private helpModal: cc.Node;
     private loading: Loading;
+    private nextLevel: GameState;
+    private nextLevelBtn: cc.Node;
 
     @property(cc.AudioClip)
     private stepAudio = null;
@@ -46,6 +49,7 @@ export default class HuaRongDao extends cc.Component {
         cc.find("menus/restartBtn", this.node).on('click', () => this.backStep(this.gameState.steps.length));
         cc.find("menus/solveBtn", this.node).on('click', this.onClickSolve);
         cc.find("menus/optionsBtn", this.node).on('click', () => this.controlModal(this.optionsModal, true));
+        cc.find("menus/nextLevelBtn", this.node).on('click', this.startNextLevel);
         cc.find("optionsModal/closeBtn", this.node).on('click', () => this.controlModal(this.optionsModal, false));
         cc.find("solveModal/closeBtn", this.node).on('click', this.onCloseSolve);
         cc.find("solveModal/prevBtn", this.node).on('click', () => this.renderSolveStep(false));
@@ -62,7 +66,7 @@ export default class HuaRongDao extends cc.Component {
         this.newGameModal = cc.find("newGameModal", this.node);
         this.levelsModal = cc.find("levelsModal", this.node);
         this.levelsComponent = this.levelsModal.getComponent("Levels");
-    
+
         this.customGameModal = cc.find("customGameModal", this.node);
         this.solveModal = cc.find("solveModal", this.node);
         this.optionsModal = cc.find("optionsModal", this.node);
@@ -70,6 +74,7 @@ export default class HuaRongDao extends cc.Component {
         this.options = this.optionsModal.getComponent("Options");
         this.loading = cc.find("loading", this.node).getComponent("Loading");
         this.board = cc.find("board", this.node);
+
         this.board.children.forEach(chessNode => {
             this.chessNodesUesd[chessNode.name] = -1;
         })
@@ -77,9 +82,13 @@ export default class HuaRongDao extends cc.Component {
         this.board.getComponent(cc.Widget).updateAlignment();
         // 隐藏其他modal
         cc.find("newGameModal/backGameBtn", this.node).scale = 0
+        this.nextLevelBtn = cc.find("menus/nextLevelBtn", this.node);
+        this.nextLevelBtn.scale = 0;
         this.solveModal.scale = 0;
         this.customGameModal.scale = 0;
         this.optionsModal.scale = 0;
+
+        
     }
 
     /**
@@ -87,7 +96,6 @@ export default class HuaRongDao extends cc.Component {
      */
     showNewGameModal = () => {
         // 如果是游戏中，显示返回游戏按钮
-        cc.log(this.gameState && !this.gameState.isWin)
         cc.find("newGameModal/backGameBtn", this.node).scale = this.gameState && !this.gameState.isWin ? 1 : 0;
         this.controlModal(this.newGameModal, true)
     }
@@ -119,11 +127,14 @@ export default class HuaRongDao extends cc.Component {
      * @param gameState 
      */
     renderNewGameState = (gameState: GameState) => {
+        cc.find("/Canvas/menus/levelName").getComponent(cc.Label).string = gameState.levelName
         for (const nodeName in this.chessNodesUesd) {
             this.chessNodesUesd[nodeName] = -1;
             cc.find(nodeName, this.board).setPosition(cc.v3(0, 2400, 0))
         }
         this.gameState = gameState;
+        this.nextLevel = null;
+        this.nextLevelBtn.scale = 0;
         this.renderGameState();
     }
 
@@ -198,10 +209,14 @@ export default class HuaRongDao extends cc.Component {
 
         }
         if (this.gameState.isWin) {
-            // cc.log(this.gameState.lookSolve)
             this.alert(this.gameState.lookSolve ? "成功！试试不看答案重来一次！" : "恭喜成功!");
-            if(!this.gameState.lookSolve) {
+            if (!this.gameState.lookSolve) {
                 this.levelsComponent.addWinLevel(this.gameState.levelName)
+                const nextLevel = this.getNextLevel();
+                if (nextLevel) {
+                    this.nextLevel = nextLevel;
+                    this.nextLevelBtn.scale = 1;
+                }
             }
         }
     }
@@ -335,6 +350,28 @@ export default class HuaRongDao extends cc.Component {
             cc.tween(modal).to(0.2, {
                 scale: isShow ? 1 : 0
             }).start()
+        }
+    }
+
+    /**
+     * 下一关
+     */
+    getNextLevel = () => {
+        try {
+            const diff = { 'E': 'easy', 'S': 'simple', 'H': 'hard' }[this.gameState.levelName[0]];
+            const index = Number(this.gameState.levelName.slice(1));
+            const gameKey = gameData[diff][index];
+            const gameState = GameState.fromSimilarKey(gameKey);
+            gameState.levelName = `${this.gameState.levelName[0]}${index + 1}`;
+            return gameState;
+        } catch (e) {
+            return null
+        }
+    }
+
+    startNextLevel = () => {
+        if (this.nextLevel) {
+            this.renderNewGameState(this.nextLevel);
         }
     }
 
